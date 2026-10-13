@@ -39,3 +39,10 @@ Proton.
   `animwipefix.asi` is missing; see
   [RECONNECT-CRASH.md](https://github.com/akacross/omp-ingame-browser-wine/blob/main/docs/RECONNECT-CRASH.md).
 - **`d3d9.dll+0x1A63E9`:** see [DXVK-CRASH.md](DXVK-CRASH.md).
+- **`0x007F7C82` in `gta_sa.exe`, EAX 0, after the window changed size or an
+  alt-tab:** a `Reset` failed. RenderWare resets the device when the window's
+  client size changes and never checks the result. After a failed one it
+  clears the camera raster it has just released. DXVK fails `Reset` while
+  anything still holds a `D3DPOOL_DEFAULT` resource. With
+  [d3d9watch](https://github.com/akacross/d3d9watch) installed, `d3d9watch.log`
+  lists what was still held, and who made or fetched it.
