@@ -63,6 +63,9 @@ for c in umu-run curl python3 sha256sum md5sum; do command -v "$c" >/dev/null ||
 [ -d "$PREFIX/drive_c" ] || die "$PREFIX is not a Wine prefix (no drive_c)"
 [ -f "$GAME/gta_sa.exe" ] || die "no gta_sa.exe in $GAME"
 [ -f "$GAME/samp.dll" ] || die "no samp.dll in $GAME: install SA-MP 0.3.7 first"
+if [ "$VARIANT" = sampcmd ] && [ ! -f "$GAME/sampcmd.exe" ] && { [ -z "$FROM" ] || [ ! -f "$FROM/sampcmd.exe" ]; }; then
+    die "the sampcmd variant needs sampcmd.exe in $GAME (or in --from): https://gitlab.com/akacross/sampcmd/-/releases"
+fi
 
 if [ -d "$PREFIX/drive_c/users/steamuser" ]; then USERDIR="$PREFIX/drive_c/users/steamuser"
 else USERDIR="$(find "$PREFIX/drive_c/users" -mindepth 1 -maxdepth 1 -type d ! -name Public | head -1)"; fi
@@ -209,8 +212,7 @@ else
     note "into $GAME (any ASI loader: SA-MP's, CLEO's or Silent's)"
 fi
 if [ "$VARIANT" = sampcmd ] && [ ! -f "$GAME/sampcmd.exe" ]; then
-    if [ -n "$FROM" ] && [ -f "$FROM/sampcmd.exe" ]; then install_file "$FROM/sampcmd.exe" "$GAME/sampcmd.exe"
-    else die "the sampcmd variant needs sampcmd.exe in $GAME: https://gitlab.com/akacross/sampcmd/-/releases"; fi
+    install_file "$FROM/sampcmd.exe" "$GAME/sampcmd.exe"   # checked at the start
 fi
 
 # ---------------------------------------------------------------------------
