@@ -1,6 +1,6 @@
 # The open.mp launcher under Wine/Proton
 
-open.mp launcher 1.6.1 is a Tauri 1 app (tao 0.16, wry 0.24) that draws its UI
+open.mp launcher 1.7.0 is a Tauri 1 app (tao 0.16, wry 0.24) that draws its UI
 in WebView2. Upstream's build installs and opens under Proton once WebView2 is
 there, but it is unusable. The fixes below are in
 [omp-launcher-wine](https://github.com/akacross/omp-launcher-wine); its
@@ -26,9 +26,10 @@ upstream's.
 | Resize cursor stuck after crossing an edge | wry sets the resize cursors itself but leaves the arrow to Chromium, and Chromium (another process) cannot set this window's cursor under Wine. | Vendored wry always sets the cursor, the arrow included. |
 | Black box around the window | A transparent window with a 4 px margin around a rounded panel; Wine shows that margin black. | No margin, no rounded corners. |
 | Wine's generic icon in the taskbar | Tauri sets no window icon. Windows falls back to the exe's, but the Linux desktop only sees the window's. | `WM_SETICON` with the exe's icon resource. |
-| The plugin gets "updated" to an older one (v0.1.4) | Upstream race: the loading screen's plugin check can use the update info's top-level fields (the previous launcher's plugin) instead of this build's `versions["6"]`. | The same version match there. |
-| Its download of `omp-client.dll` stalls ~24 KB short | `tauri-plugin-upload` (reqwest on tokio) under Wine; not fixed. | `install.sh` downloads the plugin (URL and MD5 from `api.open.mp/launcher`). A correct plugin in place is kept. |
-| The game tabs out; the in-game browser is empty, then opens only once | See [omp-ingame-browser-wine](https://github.com/akacross/omp-ingame-browser-wine). | The overlay is unfocused and parked off screen, with frames in shared memory. |
+| Its download of `omp-client.dll` (and of the SA-MP files) stalls just short of the end | `tauri-plugin-upload` (reqwest on tokio): the read for the last few kilobytes never wakes through Wine's AFD poll. The loading screen also ignored the download's result, so a failure hung too. | Under Wine, downloads go through WinHTTP (Wine's own HTTP stack), and a failed download shows an error. `install.sh` still places the plugin (URL and MD5 from `api.open.mp/launcher`). |
+| The game tabs out; the in-game browser is empty, then opens only once | See [omp-ingame-browser-wine](https://github.com/akacross/omp-ingame-browser-wine). | The overlay is unfocused and parked off screen, with frames in shared memory; the launcher injects the game's side (`ompoverlay.dll`) into the game once its omp-client connects. |
+| The game crashes as it quits (`0xC0000409`) | open.mp 1.7's client keeps its socket thread to the launcher in a global `std::thread`; its cleanup does not run on every way out, so the global's destructor finds it joinable and calls `std::terminate`. Not a Wine bug. | The injected `ompoverlay.dll` marks that thread released when the process ends (it is unloaded before omp-client); ExitProcess has already ended the thread. |
+| Overlays stay open after their game is gone | The page's close came after a send to the game that fails once the game is gone. | The page closes regardless; under Wine the launcher also closes a game's overlay when its IPC connection ends. |
 | The window goes blank and frozen | WebView2's browser process crashed; the page dies with it. | Overlays close between captures; a dead WebView2 process is logged, and the launcher restarts itself ([LAUNCHER-LOCKUP.md](https://github.com/akacross/omp-ingame-browser-wine/blob/main/docs/LAUNCHER-LOCKUP.md)). |
 
 ## Rendering

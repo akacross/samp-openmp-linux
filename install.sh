@@ -14,9 +14,9 @@
 #   --gameid ID     umu game id (default umu-omplauncher; see bin/omp-launcher.sh)
 #   --from DIR      take files from DIR instead of downloading them:
 #                   MicrosoftEdgeWebView2RuntimeInstallerX64.exe, omp-launcher.exe,
-#                   WebView2Loader.dll, omp-client.dll, ompoverlay.asi,
-#                   animwipefix.asi, sampcmd.exe (any that are missing are downloaded)
-#   --no-asi        leave the game folder alone (no ompoverlay.asi / animwipefix.asi)
+#                   WebView2Loader.dll, omp-client.dll, animwipefix.asi,
+#                   sampcmd.exe (any that are missing are downloaded)
+#   --no-asi        leave the game folder alone (no animwipefix.asi)
 #   --no-desktop    no launch script in ~/.local/bin, no desktop entry
 #   --dry-run       say what would be done, change nothing
 #
@@ -29,7 +29,7 @@ LAUNCHER_REPO_SAMPCMD=akacross/omp-launcher-wine-sampcmd
 ASI_REPO=akacross/omp-ingame-browser-wine
 WEBVIEW2_URL="https://go.microsoft.com/fwlink/p/?LinkId=2124701"   # offline standalone installer
 OMP_API="https://api.open.mp/launcher"
-BUILD_VERSION=6        # this launcher build's entry in the API (src/constants/app.ts)
+BUILD_VERSION=7        # this launcher build's entry in the API (src/constants/app.ts)
 
 PREFIX="" GAME="" PROTON="" VARIANT=wine NAME="" GAMEID=umu-omplauncher FROM=""
 NO_ASI=0 NO_DESKTOP=0 DRY=0
@@ -199,17 +199,20 @@ if [ -n "$NAME" ] && [ -z "$(reg_value PlayerName)" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-step "5/7  game plugins: ompoverlay.asi (in-game browser), animwipefix.asi (reconnect crash)"
+# The in-game browser's game side (ompoverlay) is built into the launcher since
+# 1.7.0-wine.1, which injects it into the game; no ompoverlay.asi is installed.
+step "5/7  game plugin: animwipefix.asi (reconnect crash)"
 if [ "$NO_ASI" = 1 ]; then
     note "skipped (--no-asi)"
 else
     rel="https://github.com/$ASI_REPO/releases/latest/download"
-    o="$(get ompoverlay.asi "$rel/ompoverlay.asi")"; a="$(get animwipefix.asi "$rel/animwipefix.asi")"
-    if [ -z "$FROM" ] || [ ! -f "$FROM/ompoverlay.asi" ]; then
-        sums="$(get ASI-SHA256SUMS "$rel/SHA256SUMS")"; check_sha "$o" "$sums"; check_sha "$a" "$sums"
+    a="$(get animwipefix.asi "$rel/animwipefix.asi")"
+    if [ -z "$FROM" ] || [ ! -f "$FROM/animwipefix.asi" ]; then
+        sums="$(get ASI-SHA256SUMS "$rel/SHA256SUMS")"; check_sha "$a" "$sums"
     fi
-    install_file "$o" "$GAME/ompoverlay.asi"; install_file "$a" "$GAME/animwipefix.asi"
+    install_file "$a" "$GAME/animwipefix.asi"
     note "into $GAME (any ASI loader: SA-MP's, CLEO's or Silent's)"
+    [ -f "$GAME/ompoverlay.asi" ] && note "an ompoverlay.asi from an older setup is still there: no longer needed, harmless"
 fi
 if [ "$VARIANT" = sampcmd ] && [ ! -f "$GAME/sampcmd.exe" ]; then
     install_file "$FROM/sampcmd.exe" "$GAME/sampcmd.exe"   # checked at the start

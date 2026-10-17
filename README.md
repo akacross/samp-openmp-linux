@@ -19,7 +19,7 @@ where I was wrong on the way.
 |---|---|
 | the launcher, Wine compatibility pass | [omp-launcher-wine](https://github.com/akacross/omp-launcher-wine) (fork of openmultiplayer/launcher) |
 | the same, starting games through sampcmd | [omp-launcher-wine-sampcmd](https://github.com/akacross/omp-launcher-wine-sampcmd) |
-| the in-game browser's game side, and the reconnect crash fix | [omp-ingame-browser-wine](https://github.com/akacross/omp-ingame-browser-wine) |
+| the reconnect crash fix, and the in-game browser's game side (built into the launcher since 1.7.0-wine.1) | [omp-ingame-browser-wine](https://github.com/akacross/omp-ingame-browser-wine) |
 | a D3D9 watchdog for an open DXVK crash | [d3d9watch](https://github.com/akacross/d3d9watch) |
 | this setup and the findings | here |
 
@@ -32,8 +32,8 @@ where I was wrong on the way.
 | OS | CachyOS (Arch), KDE Plasma on Wayland (Xwayland for Wine) |
 | GPU | RTX 3070, NVIDIA proprietary driver |
 | Proton | proton-cachyos 11.0 (Wine 11.0) through [umu-launcher](https://github.com/Open-Wine-Components/umu-launcher) 1.4 |
-| Game | GTA San Andreas 1.0 US, SA-MP 0.3.7-R5, open.mp client 0.2.2, DXVK `d3d9.dll` in the game folder |
-| Launcher | open.mp launcher 1.6.1 (rebuilt), WebView2 155 |
+| Game | GTA San Andreas 1.0 US, SA-MP 0.3.7-R5, open.mp client 0.4.0 (launcher 1.7's), DXVK `d3d9.dll` in the game folder |
+| Launcher | open.mp launcher 1.7.0 (rebuilt), WebView2 155 |
 
 ---
 
@@ -58,12 +58,16 @@ where I was wrong on the way.
 6. **Start games from the launcher.** The in-game browser hands frames over in
    shared memory, which only works within one wineserver. That means one
    prefix, and one launcher per machine (it owns TCP port 45791).
-7. **The in-game browser needs `ompoverlay.asi`** in the game folder, and the
-   rebuilt launcher; see
-   [omp-ingame-browser-wine](https://github.com/akacross/omp-ingame-browser-wine).
+7. **The in-game browser needs the rebuilt launcher.** Since 1.7.0-wine.1 it
+   injects the game's side of the browser itself (from
+   [omp-ingame-browser-wine](https://github.com/akacross/omp-ingame-browser-wine));
+   older rebuilds need that repository's `ompoverlay.asi` in the game folder.
 8. **Reconnecting from the in-game browser could crash the game** 30 s later.
    It's an old GTA SA bug that the reconnect happens to trigger;
    `animwipefix.asi` fixes it.
+9. **open.mp 1.7's client crashed the game as it quit** (`0xC0000409`: a
+   thread object destroyed while still joinable). The rebuilt launcher's
+   injected hook releases it first, so the game exits cleanly.
 
 Everything else is in [docs/](docs/):
 
@@ -102,8 +106,8 @@ It is idempotent: run it again to update. In order, it:
    MD5;
 4. sets the game folder in SA-MP's registry key if none is set
    (`HKCU\Software\SAMP`, `gta_sa_exe`), plus `--name`;
-5. copies `ompoverlay.asi` and `animwipefix.asi` into the game folder, checked
-   against their release's `SHA256SUMS` (`--no-asi` to skip);
+5. copies `animwipefix.asi` into the game folder, checked against its
+   release's `SHA256SUMS` (`--no-asi` to skip);
 6. writes `~/.config/samp-openmp-linux/omp-launcher.conf` and
    `~/.local/bin/omp-launcher`;
 7. extracts the launcher's icons from the installed exe into

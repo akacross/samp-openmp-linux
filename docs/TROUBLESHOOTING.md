@@ -26,15 +26,20 @@ Proton.
 - **The in-game browser shows only a cursor.** No launcher, no WebView2, or
   the game is in a different prefix or wineserver than the launcher. Start
   the game from the launcher.
-- **It shows an empty square.** `ompoverlay.asi` is missing from the game
-  folder, or the launcher is upstream's.
-- **It works once.** An old `ompoverlay.asi`: update it.
+- **It shows an empty square.** The launcher is upstream's, or a rebuild older
+  than 1.7.0-wine.1 without `ompoverlay.asi` in the game folder.
+- **It works once.** A 1.6.1 rebuild with an old `ompoverlay.asi`: update it,
+  or move to 1.7.0-wine.1, which needs none.
 - **The game tabs out when the browser opens.** Upstream's launcher, or an
   old rebuild.
 - **"Failed to bind to IPC port"** in the launcher log: another launcher on
   the machine holds 45791. Run one.
-- **The plugin download never finishes.** Run `install.sh` again (it fetches
-  `omp-client.dll` itself), or place it by hand.
+- **The plugin download never finishes.** A rebuild older than 1.7.0-wine.1
+  (it downloads through WinHTTP since then): run `install.sh` again (it
+  fetches `omp-client.dll` itself), or place it by hand.
+- **The game crashes as it quits** (`0xC0000409` at `omp-client.dll`, in
+  `sampcmd.log`): open.mp 1.7's client with a launcher older than
+  1.7.0-wine.1, whose injected hook prevents it.
 - **A crash ~30 s after reconnecting** (`gta_sa.exe+0x41214A`):
   `animwipefix.asi` is missing; see
   [RECONNECT-CRASH.md](https://github.com/akacross/omp-ingame-browser-wine/blob/main/docs/RECONNECT-CRASH.md).
